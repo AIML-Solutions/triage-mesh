@@ -6,6 +6,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 COPY README.md ./
+COPY deploy/policies.yaml ./deploy/policies.yaml
 RUN uv sync --frozen --no-dev
 
 FROM python:3.13-slim

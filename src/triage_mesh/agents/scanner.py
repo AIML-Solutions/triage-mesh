@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from triage_mesh.harness.a2a_app import JsonTaskExecutor, make_card, serve_agent
-from triage_mesh.harness.tools import call_tool
+from triage_mesh.harness.tools import Toolbelt
 from triage_mesh.manifests import parse_manifest
 from triage_mesh.schemas import DependencyInventory
 
@@ -16,10 +16,11 @@ def _mcp_url() -> str:
 
 async def handle(payload: dict) -> dict:
     repo_ref = str(payload["repo_ref"])
-    manifests: list[str] = await call_tool(_mcp_url(), "list_manifests", {})
+    belt = Toolbelt("scanner", _mcp_url())
+    manifests: list[str] = await belt.call("list_manifests", {})
     packages = []
     for filename in manifests:
-        content: str = await call_tool(_mcp_url(), "read_manifest", {"filename": filename})
+        content: str = await belt.call("read_manifest", {"filename": filename})
         packages.extend(parse_manifest(filename, content))
     inventory = DependencyInventory(repo_ref=repo_ref, manifests=manifests, packages=packages)
     return {

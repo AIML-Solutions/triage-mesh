@@ -1,0 +1,36 @@
+# Tool-call policy: the single source of truth for who may call what, with
+# which arguments, how often. Enforced deterministically by the harness
+# (triage_mesh.harness.policy) BEFORE any call leaves an agent — the model
+# cannot talk its way past it. Deny-by-default: an agent or tool absent from
+# this file is refused. Phase 3 generates K8s NetworkPolicies from the same
+# topology this file declares.
+
+agents:
+  scanner:
+    max_calls_per_task: 20
+    tools:
+      list_manifests: {}
+      read_manifest:
+        args:
+          filename:
+            enum: [requirements.txt, package-lock.json]
+
+  intel:
+    max_calls_per_task: 60
+    tools:
+      query_advisories:
+        args:
+          ecosystem:
+            enum: [PyPI, npm]
+          name:
+            pattern: '^[A-Za-z0-9@][A-Za-z0-9@/._-]{0,213}$'
+          version:
+            pattern: '^[A-Za-z0-9.!+*-]{1,64}$'
+
+  assessor:
+    max_calls_per_task: 5
+    tools:
+      write_draft:
+        args:
+          report:
+            max_bytes: 1048576

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from triage_mesh.agents import assessor, intel, scanner
+from triage_mesh.harness import tools
 from triage_mesh.schemas import (
     AdvisoryBundle,
     DependencyInventory,
@@ -37,7 +38,7 @@ async def test_scanner_handle_builds_inventory(monkeypatch):
             return ["package-lock.json", "requirements.txt"]
         return (SEED / args["filename"]).read_text()
 
-    monkeypatch.setattr(scanner, "call_tool", fake_call_tool)
+    monkeypatch.setattr(tools, "call_tool", fake_call_tool)
     result = await scanner.handle({"repo_ref": "seed", "correlation_id": "c1"})
     inventory = DependencyInventory.model_validate(result["inventory"])
     assert len(inventory.packages) == 6  # 4 PyPI + 2 npm
@@ -51,7 +52,7 @@ async def test_intel_handle_bundles_per_package(monkeypatch):
         calls.append(args)
         return BUNDLE.model_dump(mode="json")
 
-    monkeypatch.setattr(intel, "call_tool", fake_call_tool)
+    monkeypatch.setattr(tools, "call_tool", fake_call_tool)
     inventory = DependencyInventory(
         repo_ref="seed",
         manifests=["requirements.txt"],
@@ -72,7 +73,7 @@ async def test_assessor_stages_pending_report(monkeypatch):
         staged.update(args)
         return {"assessment_id": args["report"]["assessment_id"], "staged_at": "/staging/a1.json"}
 
-    monkeypatch.setattr(assessor, "call_tool", fake_call_tool)
+    monkeypatch.setattr(tools, "call_tool", fake_call_tool)
     monkeypatch.setenv("MODEL_PROVIDER", "mock")
     inventory = DependencyInventory(
         repo_ref="seed", manifests=["requirements.txt"], packages=[BUNDLE.package]

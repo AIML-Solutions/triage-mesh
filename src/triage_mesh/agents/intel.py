@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 from triage_mesh.harness.a2a_app import JsonTaskExecutor, make_card, serve_agent
-from triage_mesh.harness.tools import call_tool
+from triage_mesh.harness.tools import Toolbelt
 from triage_mesh.schemas import AdvisoryBundle, DependencyInventory
 
 
@@ -15,10 +15,10 @@ def _mcp_url() -> str:
 
 async def handle(payload: dict) -> dict:
     inventory = DependencyInventory.model_validate(payload["inventory"])
+    belt = Toolbelt("intel", _mcp_url())
     bundles: list[dict] = []
     for package in inventory.packages:
-        raw = await call_tool(
-            _mcp_url(),
+        raw = await belt.call(
             "query_advisories",
             {
                 "ecosystem": package.ecosystem.value,

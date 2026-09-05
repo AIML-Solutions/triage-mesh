@@ -11,7 +11,7 @@ import os
 
 from triage_mesh.harness.a2a_app import JsonTaskExecutor, make_card, serve_agent
 from triage_mesh.harness.provider import get_provider
-from triage_mesh.harness.tools import call_tool
+from triage_mesh.harness.tools import Toolbelt
 from triage_mesh.schemas import (
     AdvisoryBundle,
     DependencyInventory,
@@ -77,7 +77,8 @@ async def handle(payload: dict) -> dict:
         summary=summary,
         partial=bool(payload.get("partial", False)),
     )
-    staged = await call_tool(_mcp_url(), "write_draft", {"report": report.model_dump(mode="json")})
+    belt = Toolbelt("assessor", _mcp_url())
+    staged = await belt.call("write_draft", {"report": report.model_dump(mode="json")})
     return {
         "correlation_id": payload.get("correlation_id"),
         "report": report.model_dump(mode="json"),

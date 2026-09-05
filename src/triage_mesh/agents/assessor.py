@@ -12,6 +12,7 @@ import os
 from triage_mesh.harness.a2a_app import JsonTaskExecutor, make_card, serve_agent
 from triage_mesh.harness.provider import get_provider
 from triage_mesh.harness.tools import Toolbelt
+from triage_mesh.harness.trust import UNTRUSTED_PREAMBLE, data_block
 from triage_mesh.schemas import (
     AdvisoryBundle,
     DependencyInventory,
@@ -63,11 +64,21 @@ async def handle(payload: dict) -> dict:
     counts: dict[str, int] = {}
     for finding in findings:
         counts[finding.severity.value] = counts.get(finding.severity.value, 0) + 1
+    # Advisory summaries are attacker-influenced: they enter the prompt only as
+    # labeled data blocks, and the completion is used as narrative text only.
+    excerpts = "\n".join(
+        data_block(advisory.id, advisory.summary)
+        for bundle in bundles
+        for advisory in bundle.advisories[:2]
+        if advisory.summary
+    )[:8000]
     summary = await get_provider().complete(
         _SYSTEM,
+        f"{UNTRUSTED_PREAMBLE}\n\n"
         f"Write a 2-3 sentence executive summary for a vulnerability report on "
         f"'{inventory.repo_ref}': {len(inventory.packages)} packages scanned, "
-        f"{len(findings)} findings, severity counts {counts}.",
+        f"{len(findings)} findings, severity counts {counts}.\n\n"
+        f"Advisory excerpts for context:\n{excerpts}",
     )
 
     report = RemediationReport(

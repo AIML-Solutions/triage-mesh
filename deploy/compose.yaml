@@ -1,0 +1,87 @@
+# Local demo topology. Networks encode who may talk to whom — the same
+# statement the K8s NetworkPolicies will enforce in phase 3:
+#   control: orchestrator <-> agents (A2A)
+#   tools-*: each agent <-> its own MCP server, nothing else
+# Only vuln-intel gets internet egress (OSV queries).
+name: triage-mesh
+
+x-service: &service
+  build: ..
+  init: true
+  restart: unless-stopped
+
+services:
+  orchestrator:
+    <<: *service
+    command: python -m triage_mesh.orchestrator.service
+    environment:
+      SCANNER_URL: http://scanner:7201
+      INTEL_URL: http://intel:7202
+      ASSESSOR_URL: http://assessor:7203
+      PUBLISHED_DIR: /data/published
+    ports: ["8080:8080"]
+    volumes: [published:/data/published]
+    networks: [control, edge]
+    depends_on: [scanner, intel, assessor]
+
+  scanner:
+    <<: *service
+    command: python -m triage_mesh.agents.scanner
+    environment:
+      MCP_URL: http://mcp-repo-reader:7101/mcp
+      PUBLIC_URL: http://scanner:7201/
+    networks: [control, tools-scanner]
+    depends_on: [mcp-repo-reader]
+
+  intel:
+    <<: *service
+    command: python -m triage_mesh.agents.intel
+    environment:
+      MCP_URL: http://mcp-vuln-intel:7102/mcp
+      PUBLIC_URL: http://intel:7202/
+    networks: [control, tools-intel]
+    depends_on: [mcp-vuln-intel]
+
+  assessor:
+    <<: *service
+    command: python -m triage_mesh.agents.assessor
+    environment:
+      MCP_URL: http://mcp-report-writer:7103/mcp
+      PUBLIC_URL: http://assessor:7203/
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-mock}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    networks: [control, tools-assessor]
+    depends_on: [mcp-report-writer]
+
+  mcp-repo-reader:
+    <<: *service
+    command: python -m triage_mesh.mcp_servers.repo_reader
+    environment:
+      REPO_ROOT: /repo
+    volumes: ["../demo/seed-repo:/repo:ro"]
+    networks: [tools-scanner]
+
+  mcp-vuln-intel:
+    <<: *service
+    command: python -m triage_mesh.mcp_servers.vuln_intel
+    networks: [tools-intel, egress]
+
+  mcp-report-writer:
+    <<: *service
+    command: python -m triage_mesh.mcp_servers.report_writer
+    environment:
+      STAGING_DIR: /data/staging
+    volumes: [staging:/data/staging]
+    networks: [tools-assessor]
+
+networks:
+  edge: {}
+  control: {internal: true}
+  tools-scanner: {internal: true}
+  tools-intel: {internal: true}
+  tools-assessor: {internal: true}
+  egress: {}
+
+volumes:
+  staging:
+  published:

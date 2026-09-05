@@ -36,4 +36,10 @@ The load-bearing assumption, taken from the systems-security literature on agent
 
 ## Verification
 
-Every mitigation above maps to at least one automated check: red-team cases (`tests/redteam/`, threats T1–T4, T6), policy unit tests (T4, T6, T7), and a cluster conformance test that asserts the NetworkPolicy topology (T5). CI publishes the attack-block count the README badge reports.
+Every mitigation above maps to automated checks that run in CI:
+
+- **Red-team suite** (`tests/redteam/test_attacks.py`, 12 scenarios): attacks 01–04 (T1 injection via advisory text, including delimiter escape), 05 (T2 hostile manifests), 06 (T3 smuggled fields in tool results), 07–09 (T4 cross-role calls, out-of-scope reads, rate-ceiling breach), 10 (T5 lateral token reuse), 11 (T6 exfil-shaped queries), 12 (T7 forged publication). All must fail closed for CI to pass.
+- **Policy unit tests** (`tests/test_policy.py`): deny-by-default, enum/pattern/size constraints, ceilings (T4, T6, T9).
+- **Auth tests** (`tests/test_auth.py`): audience scoping, tamper rejection, middleware enforcement (T5).
+- Live checks performed against the compose stack: tokenless POSTs to MCP and A2A endpoints return 401; the scanner container cannot open a socket to `mcp-vuln-intel` (network topology, T5).
+- Phase 3 adds a cluster conformance test asserting the NetworkPolicy topology matches `deploy/policies.yaml`.

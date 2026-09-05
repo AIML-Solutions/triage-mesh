@@ -1,10 +1,12 @@
 # triage-mesh
 
+![ci](https://github.com/AIML-Solutions/triage-mesh/actions/workflows/ci.yml/badge.svg)
+
 **A multi-agent vulnerability triage system that treats protocols, privilege, and untrusted data as first-class architectural concerns.**
 
 An orchestrator delegates to specialist agents over **A2A**; each agent reaches its tools through **MCP** servers built on the 2026-07-28 stateless spec. Every boundary is schema-validated, every tool call passes a deterministic policy engine, and the whole topology is enforced twice — once in the harness, once in Kubernetes NetworkPolicies.
 
-> Status: phase 1 complete — the happy path runs end-to-end in containers against live OSV data. Security hardening (policy engine, trust labels, red-team CI) is phase 2. Design source of truth: [docs/architecture.md](docs/architecture.md).
+> Status: phase 2 complete — the security layer is live and adversarially tested: a deny-by-default policy engine enforced in the harness, trust-labeled untrusted text, audience-scoped service JWTs on every internal call, and a **red-team suite of 12 attack scenarios that must fail closed in CI** ([tests/redteam](tests/redteam/test_attacks.py), each mapped to a threat in [docs/threat-model.md](docs/threat-model.md)). Design source of truth: [docs/architecture.md](docs/architecture.md).
 
 ## Quickstart
 
@@ -48,8 +50,8 @@ flowchart LR
 |---|---|---|
 | 0 | Architecture, protocol-boundary, and threat-model docs | ✅ |
 | 1 | Happy path end-to-end: orchestrator + 3 agents + 3 MCP servers, one-command demo | ✅ |
-| 2 | Policy engine, trust labels, red-team suite in CI | next |
-| 3 | Helm chart, NetworkPolicies, kind-reproducible cluster deploy | |
+| 2 | Policy engine, trust labels, service JWTs, red-team suite in CI | ✅ |
+| 3 | Helm chart, NetworkPolicies, kind-reproducible cluster deploy | next |
 | 4 | Observability, demo recording, write-up | |
 
 ## Stack

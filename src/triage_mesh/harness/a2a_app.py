@@ -92,8 +92,10 @@ def build_app(card: AgentCard, executor: AgentExecutor) -> Starlette:
 
 
 def serve_agent(card: AgentCard, executor: AgentExecutor, default_port: int) -> None:
+    from triage_mesh.harness.auth import ServiceAuthMiddleware
+
     uvicorn.run(
-        build_app(card, executor),
+        ServiceAuthMiddleware(build_app(card, executor), audience=card.name),
         host=os.environ.get("HOST", "0.0.0.0"),
         port=int(os.environ.get("PORT", default_port)),
         log_level="warning",

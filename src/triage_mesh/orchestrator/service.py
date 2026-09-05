@@ -56,6 +56,7 @@ async def run_pipeline(assessment: Assessment) -> None:
             config["scanner_url"],
             {"repo_ref": assessment.repo_ref, "correlation_id": correlation_id},
             config["deadline"],
+            audience="scanner",
         )
         inventory = scan["inventory"]
 
@@ -66,6 +67,7 @@ async def run_pipeline(assessment: Assessment) -> None:
                 config["intel_url"],
                 {"inventory": inventory, "correlation_id": correlation_id},
                 config["deadline"],
+                audience="intel",
             )
             bundles = intel["bundles"]
         except a2a.AgentTaskError as error:
@@ -83,6 +85,7 @@ async def run_pipeline(assessment: Assessment) -> None:
                 "correlation_id": correlation_id,
             },
             config["deadline"],
+            audience="assessor",
         )
         assessment.report = RemediationReport.model_validate(assessed["report"])
         assessment.state = AssessmentState.PENDING_APPROVAL

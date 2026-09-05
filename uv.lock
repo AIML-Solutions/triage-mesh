@@ -1192,6 +1192,7 @@ dependencies = [
     { name = "httpx" },
     { name = "mcp" },
     { name = "pydantic" },
+    { name = "pyjwt" },
     { name = "pyyaml" },
     { name = "uvicorn" },
 ]
@@ -1211,6 +1212,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "mcp", specifier = ">=1.15" },
     { name = "pydantic", specifier = ">=2.8" },
+    { name = "pyjwt", specifier = ">=2.13.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]

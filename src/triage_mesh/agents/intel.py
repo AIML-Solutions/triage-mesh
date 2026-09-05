@@ -15,7 +15,7 @@ def _mcp_url() -> str:
 
 async def handle(payload: dict) -> dict:
     inventory = DependencyInventory.model_validate(payload["inventory"])
-    belt = Toolbelt("intel", _mcp_url())
+    belt = Toolbelt("intel", _mcp_url(), audience="vuln-intel")
     bundles: list[dict] = []
     for package in inventory.packages:
         raw = await belt.call(

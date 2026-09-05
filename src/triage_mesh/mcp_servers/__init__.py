@@ -22,8 +22,10 @@ def serve(server: MCPServer, default_port: int) -> None:
             enable_dns_rebinding_protection=False,
         ),
     )
+    from triage_mesh.harness.auth import ServiceAuthMiddleware
+
     uvicorn.run(
-        app,
+        ServiceAuthMiddleware(app, audience=server.name),
         host=os.environ.get("HOST", "0.0.0.0"),
         port=int(os.environ.get("PORT", default_port)),
         log_level="info",

@@ -7,13 +7,24 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import httpx
 from mcp.client.client import Client
+from mcp.client.streamable_http import streamable_http_client
 
 from triage_mesh.harness.policy import PolicyEngine, PolicyViolation
 
 
-async def call_tool(mcp_url: str, tool: str, arguments: dict[str, Any]) -> Any:
-    async with Client(mcp_url) as client:
+def _client(mcp_url: str, headers: dict[str, str] | None) -> Client:
+    if not headers:
+        return Client(mcp_url)
+    transport = streamable_http_client(mcp_url, http_client=httpx.AsyncClient(headers=headers))
+    return Client(transport)
+
+
+async def call_tool(
+    mcp_url: str, tool: str, arguments: dict[str, Any], headers: dict[str, str] | None = None
+) -> Any:
+    async with _client(mcp_url, headers) as client:
         result = await client.call_tool(tool, arguments)
         if result.is_error:
             raise RuntimeError(f"tool {tool} failed: {result.content}")
@@ -31,10 +42,17 @@ async def call_tool(mcp_url: str, tool: str, arguments: dict[str, Any]) -> Any:
 class Toolbelt:
     """One agent's policied view of its tool server, scoped to one task."""
 
-    def __init__(self, agent: str, mcp_url: str, policy: PolicyEngine | None = None):
+    def __init__(
+        self,
+        agent: str,
+        mcp_url: str,
+        policy: PolicyEngine | None = None,
+        audience: str | None = None,
+    ):
         self._agent = agent
         self._mcp_url = mcp_url
         self._policy = policy or PolicyEngine.load()
+        self._audience = audience
         self._calls = 0
 
     async def call(self, tool: str, arguments: dict[str, Any]) -> Any:
@@ -44,4 +62,7 @@ class Toolbelt:
                 f"agent {self._agent!r} exceeded {self._policy.max_calls(self._agent)} calls per task"
             )
         self._policy.check(self._agent, tool, arguments)
-        return await call_tool(self._mcp_url, tool, arguments)
+        from triage_mesh.harness.auth import bearer_headers
+
+        headers = bearer_headers(self._agent, self._audience) if self._audience else None
+        return await call_tool(self._mcp_url, tool, arguments, headers=headers)

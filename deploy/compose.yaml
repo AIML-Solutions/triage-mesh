@@ -19,6 +19,7 @@ services:
       INTEL_URL: http://intel:7202
       ASSESSOR_URL: http://assessor:7203
       PUBLISHED_DIR: /data/published
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     ports: ["8080:8080"]
     volumes: [published:/data/published]
     networks: [control, edge]
@@ -30,6 +31,7 @@ services:
     environment:
       MCP_URL: http://mcp-repo-reader:7101/mcp
       PUBLIC_URL: http://scanner:7201/
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     networks: [control, tools-scanner]
     depends_on: [mcp-repo-reader]
 
@@ -39,6 +41,7 @@ services:
     environment:
       MCP_URL: http://mcp-vuln-intel:7102/mcp
       PUBLIC_URL: http://intel:7202/
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     networks: [control, tools-intel]
     depends_on: [mcp-vuln-intel]
 
@@ -48,6 +51,7 @@ services:
     environment:
       MCP_URL: http://mcp-report-writer:7103/mcp
       PUBLIC_URL: http://assessor:7203/
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
       MODEL_PROVIDER: ${MODEL_PROVIDER:-mock}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     networks: [control, tools-assessor]
@@ -58,12 +62,15 @@ services:
     command: python -m triage_mesh.mcp_servers.repo_reader
     environment:
       REPO_ROOT: /repo
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     volumes: ["../demo/seed-repo:/repo:ro"]
     networks: [tools-scanner]
 
   mcp-vuln-intel:
     <<: *service
     command: python -m triage_mesh.mcp_servers.vuln_intel
+    environment:
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     networks: [tools-intel, egress]
 
   mcp-report-writer:
@@ -71,6 +78,7 @@ services:
     command: python -m triage_mesh.mcp_servers.report_writer
     environment:
       STAGING_DIR: /data/staging
+      MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
     volumes: [staging:/data/staging]
     networks: [tools-assessor]
 

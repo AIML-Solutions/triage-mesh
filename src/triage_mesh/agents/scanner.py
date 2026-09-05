@@ -16,7 +16,7 @@ def _mcp_url() -> str:
 
 async def handle(payload: dict) -> dict:
     repo_ref = str(payload["repo_ref"])
-    belt = Toolbelt("scanner", _mcp_url())
+    belt = Toolbelt("scanner", _mcp_url(), audience="repo-reader")
     manifests: list[str] = await belt.call("list_manifests", {})
     packages = []
     for filename in manifests:

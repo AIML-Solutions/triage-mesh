@@ -23,7 +23,7 @@ BUNDLE = {
 
 
 def fake_send_task(*, intel_fails: bool = False):
-    async def _send(agent_url: str, payload: dict, deadline: float) -> dict:
+    async def _send(agent_url: str, payload: dict, deadline: float, audience=None) -> dict:
         if "7201" in agent_url:  # scanner
             return {"inventory": INVENTORY, "correlation_id": payload["correlation_id"]}
         if "7202" in agent_url:  # intel

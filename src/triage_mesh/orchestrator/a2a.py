@@ -6,8 +6,12 @@ import asyncio
 import json
 import uuid
 
+import httpx
+from a2a.client.client import ClientConfig
 from a2a.client.client_factory import ClientFactory
 from a2a.types import GetTaskRequest, Message, Part, SendMessageRequest
+
+from triage_mesh.harness.auth import bearer_headers
 
 _COMPLETED_STATE = 3  # TASK_STATE_COMPLETED
 
@@ -16,20 +20,24 @@ class AgentTaskError(RuntimeError):
     pass
 
 
-async def send_task(agent_url: str, payload: dict, deadline_seconds: float) -> dict:
+async def send_task(
+    agent_url: str, payload: dict, deadline_seconds: float, audience: str | None = None
+) -> dict:
     """Send one task to an A2A agent and return its result artifact as a dict.
 
     Raises AgentTaskError on failure or deadline expiry — callers decide
     whether that degrades the assessment to partial or fails it.
     """
     try:
-        return await asyncio.wait_for(_send(agent_url, payload), timeout=deadline_seconds)
+        return await asyncio.wait_for(_send(agent_url, payload, audience), timeout=deadline_seconds)
     except TimeoutError as error:
         raise AgentTaskError(f"deadline exceeded for {agent_url}") from error
 
 
-async def _send(agent_url: str, payload: dict) -> dict:
-    client = await ClientFactory().create_from_url(agent_url)
+async def _send(agent_url: str, payload: dict, audience: str | None = None) -> dict:
+    headers = bearer_headers("orchestrator", audience) if audience else {}
+    config = ClientConfig(httpx_client=httpx.AsyncClient(headers=headers))
+    client = await ClientFactory(config).create_from_url(agent_url)
     try:
         message = Message(
             message_id=str(uuid.uuid4()),

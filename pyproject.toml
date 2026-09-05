@@ -13,6 +13,7 @@ dependencies = [
     "a2a-sdk>=0.3",
     "anthropic>=0.40",
     "pyyaml>=6.0.3",
+    "pyjwt>=2.13.0",
 ]
 
 [dependency-groups]

@@ -88,7 +88,7 @@ async def handle(payload: dict) -> dict:
         summary=summary,
         partial=bool(payload.get("partial", False)),
     )
-    belt = Toolbelt("assessor", _mcp_url())
+    belt = Toolbelt("assessor", _mcp_url(), audience="report-writer")
     staged = await belt.call("write_draft", {"report": report.model_dump(mode="json")})
     return {
         "correlation_id": payload.get("correlation_id"),

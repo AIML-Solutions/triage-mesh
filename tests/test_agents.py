@@ -33,7 +33,7 @@ BUNDLE = AdvisoryBundle.model_validate(
 
 
 async def test_scanner_handle_builds_inventory(monkeypatch):
-    async def fake_call_tool(url, tool, args):
+    async def fake_call_tool(url, tool, args, headers=None):
         if tool == "list_manifests":
             return ["package-lock.json", "requirements.txt"]
         return (SEED / args["filename"]).read_text()
@@ -48,7 +48,7 @@ async def test_scanner_handle_builds_inventory(monkeypatch):
 async def test_intel_handle_bundles_per_package(monkeypatch):
     calls = []
 
-    async def fake_call_tool(url, tool, args):
+    async def fake_call_tool(url, tool, args, headers=None):
         calls.append(args)
         return BUNDLE.model_dump(mode="json")
 
@@ -69,7 +69,7 @@ async def test_intel_handle_bundles_per_package(monkeypatch):
 async def test_assessor_stages_pending_report(monkeypatch):
     staged = {}
 
-    async def fake_call_tool(url, tool, args):
+    async def fake_call_tool(url, tool, args, headers=None):
         staged.update(args)
         return {"assessment_id": args["report"]["assessment_id"], "staged_at": "/staging/a1.json"}
 

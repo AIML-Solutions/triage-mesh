@@ -52,7 +52,7 @@ def test_payload_size_cap():
 async def test_rate_ceiling_per_task(monkeypatch):
     from triage_mesh.harness import tools as tools_module
 
-    async def fake_call_tool(url, tool, args):
+    async def fake_call_tool(url, tool, args, headers=None):
         return "ok"
 
     monkeypatch.setattr(tools_module, "call_tool", fake_call_tool)

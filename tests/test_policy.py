@@ -31,7 +31,8 @@ def test_pattern_blocks_exfil_shaped_names():
     for bad in ["requests?d=hunter2", "a b", "x" * 300, "../../../etc/passwd"]:
         with pytest.raises(PolicyViolation):
             ENGINE.check(
-                "intel", "query_advisories",
+                "intel",
+                "query_advisories",
                 {"ecosystem": "PyPI", "name": bad, "version": "1.0"},
             )
 
@@ -39,8 +40,14 @@ def test_pattern_blocks_exfil_shaped_names():
 def test_unexpected_argument_rejected():
     with pytest.raises(PolicyViolation):
         ENGINE.check(
-            "intel", "query_advisories",
-            {"ecosystem": "PyPI", "name": "requests", "version": "1.0", "callback_url": "http://evil"},
+            "intel",
+            "query_advisories",
+            {
+                "ecosystem": "PyPI",
+                "name": "requests",
+                "version": "1.0",
+                "callback_url": "http://evil",
+            },
         )
 
 

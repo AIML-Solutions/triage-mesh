@@ -12,6 +12,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Install
         run: uv sync --frozen
+      - name: Lint and format
+        run: |
+          uv run ruff check src tests scripts
+          uv run ruff format --check src tests scripts
       - name: Unit and integration tests
         run: uv run pytest -q --ignore=tests/redteam
       - name: Red-team suite (12 attack scenarios must fail closed)

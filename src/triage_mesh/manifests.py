@@ -57,9 +57,7 @@ def parse_package_lock(content: str) -> list[PackageCoordinate]:
         name = path.rpartition("node_modules/")[2]
         if not name or not isinstance(version, str):
             continue
-        packages.append(
-            PackageCoordinate(ecosystem=Ecosystem.NPM, name=name, version=version)
-        )
+        packages.append(PackageCoordinate(ecosystem=Ecosystem.NPM, name=name, version=version))
     return packages
 
 

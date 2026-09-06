@@ -53,7 +53,9 @@ async def _send(agent_url: str, payload: dict, audience: str | None = None) -> d
 
         task = await client.get_task(GetTaskRequest(id=task_id))
         if task.status.state != _COMPLETED_STATE:
-            raise AgentTaskError(f"task {task_id} on {agent_url} ended in state {task.status.state}")
+            raise AgentTaskError(
+                f"task {task_id} on {agent_url} ended in state {task.status.state}"
+            )
         for artifact in task.artifacts:
             for part in artifact.parts:
                 if part.text:

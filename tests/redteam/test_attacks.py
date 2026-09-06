@@ -11,7 +11,7 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from triage_mesh.agents import assessor, intel, scanner
+from triage_mesh.agents import assessor, intel
 from triage_mesh.harness import auth, tools
 from triage_mesh.harness.policy import PolicyEngine, PolicyViolation
 from triage_mesh.harness.tools import Toolbelt
@@ -80,6 +80,7 @@ def assessor_run(monkeypatch):
 
 # --- T1: indirect prompt injection via advisory text -------------------------
 
+
 async def test_attack_01_injected_advisory_cannot_publish(assessor_run):
     outcome = await assessor_run(poisoned_bundle())
     assert outcome["result"]["report"]["status"] == "pending_approval"
@@ -112,6 +113,7 @@ async def test_attack_04_delimiter_escape_stays_contained(assessor_run):
 
 # --- T2: malicious repo contents ---------------------------------------------
 
+
 def test_attack_05_hostile_manifest_yields_only_exact_pins():
     hostile = "\n".join(
         [
@@ -127,6 +129,7 @@ def test_attack_05_hostile_manifest_yields_only_exact_pins():
 
 # --- T3: poisoned tool results ------------------------------------------------
 
+
 async def test_attack_06_smuggled_fields_in_advisories_rejected(monkeypatch):
     poisoned = poisoned_bundle()
     poisoned["advisories"][0]["execute_command"] = "rm -rf /"
@@ -141,6 +144,7 @@ async def test_attack_06_smuggled_fields_in_advisories_rejected(monkeypatch):
 
 
 # --- T4: agent overreach -------------------------------------------------------
+
 
 def test_attack_07_cross_role_tool_call_denied():
     with pytest.raises(PolicyViolation):
@@ -165,6 +169,7 @@ async def test_attack_09_rate_ceiling_stops_runaway_agent(monkeypatch):
 
 # --- T5: lateral movement ------------------------------------------------------
 
+
 async def test_attack_10_stolen_token_fails_on_other_service(monkeypatch):
     monkeypatch.setenv("MESH_SECRET", "rt-secret")
     stolen = auth.bearer_headers("scanner", "repo-reader")
@@ -183,21 +188,27 @@ async def test_attack_10_stolen_token_fails_on_other_service(monkeypatch):
 
 # --- T6: exfiltration via the egress channel -----------------------------------
 
+
 def test_attack_11_exfil_shaped_query_denied():
     for name in ["requests?token=AKIAIOSFODNN7", "evil.test/leak?d=", "a\nb"]:
         with pytest.raises(PolicyViolation):
             ENGINE.check(
-                "intel", "query_advisories",
+                "intel",
+                "query_advisories",
                 {"ecosystem": "PyPI", "name": name, "version": "1.0"},
             )
 
 
 # --- T7: forged publication ----------------------------------------------------
 
+
 def test_attack_12_writer_cannot_publish(tmp_path, monkeypatch):
     monkeypatch.setenv("STAGING_DIR", str(tmp_path))
     forged = RemediationReport(
-        assessment_id="rt12", repo_ref="seed", findings=[], summary="forged",
+        assessment_id="rt12",
+        repo_ref="seed",
+        findings=[],
+        summary="forged",
         status=ReportStatus.PUBLISHED,
     )
     report_writer.write_draft(forged.model_dump(mode="json"))

@@ -5,7 +5,13 @@ import pytest
 import respx
 
 from triage_mesh.mcp_servers import osv, repo_reader, report_writer
-from triage_mesh.schemas import Ecosystem, PackageCoordinate, RemediationReport, ReportStatus, Severity
+from triage_mesh.schemas import (
+    Ecosystem,
+    PackageCoordinate,
+    RemediationReport,
+    ReportStatus,
+    Severity,
+)
 
 PKG = PackageCoordinate(ecosystem=Ecosystem.PYPI, name="requests", version="2.25.1")
 
@@ -19,7 +25,12 @@ OSV_RESPONSE = {
             "affected": [
                 {
                     "package": {"ecosystem": "PyPI", "name": "requests"},
-                    "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "2.3.0"}, {"fixed": "2.31.0"}]}],
+                    "ranges": [
+                        {
+                            "type": "ECOSYSTEM",
+                            "events": [{"introduced": "2.3.0"}, {"fixed": "2.31.0"}],
+                        }
+                    ],
                 }
             ],
             "references": [{"type": "ADVISORY", "url": "https://example.test/advisory"}],
@@ -73,7 +84,10 @@ def test_repo_reader_rejects_unknown_files(tmp_path, monkeypatch):
 def test_report_writer_forces_pending_approval(tmp_path, monkeypatch):
     monkeypatch.setenv("STAGING_DIR", str(tmp_path))
     report = RemediationReport(
-        assessment_id="a1", repo_ref="demo", findings=[], summary="clean",
+        assessment_id="a1",
+        repo_ref="demo",
+        findings=[],
+        summary="clean",
         status=ReportStatus.PUBLISHED,  # writer must refuse to honor this
     )
     result = report_writer.write_draft(report.model_dump(mode="json"))

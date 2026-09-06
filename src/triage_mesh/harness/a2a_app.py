@@ -72,7 +72,12 @@ class JsonTaskExecutor(AgentExecutor):
                 [Part(text=json.dumps(result, default=str))], name=f"{self._service}.result"
             )
             await updater.complete()
-            log(self._logger, "task.complete", correlation_id=correlation_id, task_id=context.task_id)
+            log(
+                self._logger,
+                "task.complete",
+                correlation_id=correlation_id,
+                task_id=context.task_id,
+            )
         except Exception as error:
             log(self._logger, "task.failed", task_id=context.task_id, error=str(error))
             await updater.failed(

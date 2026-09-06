@@ -19,7 +19,9 @@ _BACKOFF_SECONDS = 1.0
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 
 
-async def post_with_retry(client: httpx.AsyncClient, url: str, payload: dict[str, Any]) -> httpx.Response:
+async def post_with_retry(
+    client: httpx.AsyncClient, url: str, payload: dict[str, Any]
+) -> httpx.Response:
     last_error: Exception | None = None
     for attempt in range(_RETRIES):
         try:
@@ -33,7 +35,10 @@ async def post_with_retry(client: httpx.AsyncClient, url: str, payload: dict[str
             response.raise_for_status()
             return response
         except (httpx.TransportError, httpx.HTTPStatusError) as error:
-            if isinstance(error, httpx.HTTPStatusError) and error.response.status_code not in _RETRYABLE_STATUS:
+            if (
+                isinstance(error, httpx.HTTPStatusError)
+                and error.response.status_code not in _RETRYABLE_STATUS
+            ):
                 raise
             last_error = error
             await asyncio.sleep(_BACKOFF_SECONDS * 2**attempt)
@@ -73,9 +78,7 @@ def osv_to_advisories(package: PackageCoordinate, data: dict[str, Any]) -> list[
                 severity=_severity_of(entry),
                 affected_package=package,
                 fixed_version=_fixed_version_of(entry, package),
-                references=[
-                    str(ref.get("url", "")) for ref in entry.get("references", [])[:10]
-                ],
+                references=[str(ref.get("url", "")) for ref in entry.get("references", [])[:10]],
             )
         )
     return advisories

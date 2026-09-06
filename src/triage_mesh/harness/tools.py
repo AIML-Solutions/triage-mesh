@@ -59,7 +59,8 @@ class Toolbelt:
         self._calls += 1
         if self._calls > self._policy.max_calls(self._agent):
             raise PolicyViolation(
-                f"agent {self._agent!r} exceeded {self._policy.max_calls(self._agent)} calls per task"
+                f"agent {self._agent!r} exceeded "
+                f"{self._policy.max_calls(self._agent)} calls per task"
             )
         self._policy.check(self._agent, tool, arguments)
         from triage_mesh.harness.auth import bearer_headers

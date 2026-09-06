@@ -1,8 +1,11 @@
 [project]
 name = "triage-mesh"
-version = "0.1.0"
+version = "0.2.0"
 description = "Multi-agent vulnerability triage over MCP + A2A with a deterministic security harness"
 readme = "README.md"
+license = "MIT"
+authors = [{ name = "Dennis Donaghy" }]
+keywords = ["ai-agents", "mcp", "a2a", "security", "prompt-injection", "kubernetes"]
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.8",
@@ -16,11 +19,15 @@ dependencies = [
     "pyjwt>=2.13.0",
 ]
 
+[project.urls]
+Repository = "https://github.com/AIML-Solutions/triage-mesh"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "respx>=0.21",
+    "ruff>=0.16.6",
 ]
 
 [build-system]
@@ -33,3 +40,14 @@ packages = ["src/triage_mesh"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["SIM108"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B017"]

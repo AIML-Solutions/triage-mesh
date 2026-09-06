@@ -26,7 +26,7 @@ class PolicyEngine:
         self._agents: dict = config.get("agents") or {}
 
     @classmethod
-    def load(cls, path: str | Path | None = None) -> "PolicyEngine":
+    def load(cls, path: str | Path | None = None) -> PolicyEngine:
         path = Path(path or os.environ.get("POLICY_PATH", "deploy/policies.yaml"))
         return cls(yaml.safe_load(path.read_text(encoding="utf-8")))
 
@@ -56,9 +56,10 @@ class PolicyEngine:
     def _check_value(label: str, value: Any, rules: dict) -> None:
         if "enum" in rules and value not in rules["enum"]:
             raise PolicyViolation(f"{label}: value {value!r} not in allowed set")
-        if "pattern" in rules:
-            if not isinstance(value, str) or not re.fullmatch(rules["pattern"], value):
-                raise PolicyViolation(f"{label}: value does not match allowed pattern")
+        if "pattern" in rules and (
+            not isinstance(value, str) or not re.fullmatch(rules["pattern"], value)
+        ):
+            raise PolicyViolation(f"{label}: value does not match allowed pattern")
         if "max_bytes" in rules:
             size = len(json.dumps(value, default=str).encode("utf-8"))
             if size > int(rules["max_bytes"]):

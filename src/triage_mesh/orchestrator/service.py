@@ -89,8 +89,13 @@ async def run_pipeline(assessment: Assessment) -> None:
         )
         assessment.report = RemediationReport.model_validate(assessed["report"])
         assessment.state = AssessmentState.PENDING_APPROVAL
-        log(logger, "assessment.ready", correlation_id=correlation_id,
-            findings=len(assessment.report.findings), partial=partial)
+        log(
+            logger,
+            "assessment.ready",
+            correlation_id=correlation_id,
+            findings=len(assessment.report.findings),
+            partial=partial,
+        )
     except Exception as error:
         assessment.state = AssessmentState.FAILED
         assessment.error = str(error)
@@ -140,7 +145,11 @@ async def approve(assessment_id: str) -> dict:
     path = published_dir / f"{assessment.id}.json"
     path.write_text(assessment.report.model_dump_json(indent=2), encoding="utf-8")
     log(logger, "assessment.published", correlation_id=assessment.id, path=str(path))
-    return {"assessment_id": assessment.id, "state": assessment.state.value, "published_at": str(path)}
+    return {
+        "assessment_id": assessment.id,
+        "state": assessment.state.value,
+        "published_at": str(path),
+    }
 
 
 def main() -> None:

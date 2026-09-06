@@ -84,7 +84,10 @@ async def _reject(send, detail: str) -> None:
         {
             "type": "http.response.start",
             "status": 401,
-            "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())],
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode()),
+            ],
         }
     )
     await send({"type": "http.response.body", "body": body})

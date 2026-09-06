@@ -19,13 +19,9 @@ def test_package_coordinate_roundtrip():
 
 def test_extra_fields_rejected_everywhere():
     with pytest.raises(ValidationError):
-        PackageCoordinate(
-            ecosystem=Ecosystem.PYPI, name="requests", version="1.0", registry="evil"
-        )
+        PackageCoordinate(ecosystem=Ecosystem.PYPI, name="requests", version="1.0", registry="evil")
     with pytest.raises(ValidationError):
-        DependencyInventory(
-            repo_ref="demo", manifests=[], packages=[], exfil_channel="dns"
-        )
+        DependencyInventory(repo_ref="demo", manifests=[], packages=[], exfil_channel="dns")
 
 
 def test_advisory_defaults_are_safe():
@@ -41,7 +37,5 @@ def test_advisory_defaults_are_safe():
 
 
 def test_report_starts_pending_approval():
-    report = RemediationReport(
-        assessment_id="a1", repo_ref="demo", findings=[], summary="clean"
-    )
+    report = RemediationReport(assessment_id="a1", repo_ref="demo", findings=[], summary="clean")
     assert report.status is ReportStatus.PENDING_APPROVAL

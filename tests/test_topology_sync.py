@@ -29,6 +29,8 @@ def test_every_agent_has_a_topology_edge_to_exactly_one_tool_server():
 
 
 def test_only_vuln_intel_has_internet_egress():
-    services = yaml.safe_load((ROOT / "deploy" / "policies.yaml").read_text())["topology"]["services"]
+    services = yaml.safe_load((ROOT / "deploy" / "policies.yaml").read_text())["topology"][
+        "services"
+    ]
     with_egress = [name for name, meta in services.items() if meta.get("internet_egress")]
     assert with_egress == ["mcp-vuln-intel"]

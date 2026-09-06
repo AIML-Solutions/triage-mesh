@@ -17,7 +17,7 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=False)
 
 
-class Ecosystem(str, enum.Enum):
+class Ecosystem(enum.StrEnum):
     PYPI = "PyPI"
     NPM = "npm"
 
@@ -39,7 +39,7 @@ class DependencyInventory(StrictModel):
     generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class Severity(str, enum.Enum):
+class Severity(enum.StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -84,7 +84,7 @@ class Finding(StrictModel):
     fixed_version: str | None = None
 
 
-class ReportStatus(str, enum.Enum):
+class ReportStatus(enum.StrEnum):
     PENDING_APPROVAL = "pending_approval"
     PUBLISHED = "published"
 
@@ -104,7 +104,7 @@ class RemediationReport(StrictModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class AssessmentState(str, enum.Enum):
+class AssessmentState(enum.StrEnum):
     """Lifecycle of one assessment as tracked by the orchestrator."""
 
     PENDING = "pending"

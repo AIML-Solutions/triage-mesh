@@ -34,10 +34,22 @@ async def send_task(
         raise AgentTaskError(f"deadline exceeded for {agent_url}") from error
 
 
+async def _connect(agent_url: str, headers: dict):
+    """Resolve the agent card with brief retries — agents may still be booting."""
+    for attempt in range(3):
+        config = ClientConfig(httpx_client=httpx.AsyncClient(headers=headers))
+        try:
+            return await ClientFactory(config).create_from_url(agent_url)
+        except Exception:
+            if attempt == 2:
+                raise
+            await asyncio.sleep(2.0 * (attempt + 1))
+    raise AgentTaskError(f"unreachable: {agent_url}")  # pragma: no cover
+
+
 async def _send(agent_url: str, payload: dict, audience: str | None = None) -> dict:
     headers = bearer_headers("orchestrator", audience) if audience else {}
-    config = ClientConfig(httpx_client=httpx.AsyncClient(headers=headers))
-    client = await ClientFactory(config).create_from_url(agent_url)
+    client = await _connect(agent_url, headers)
     try:
         message = Message(
             message_id=str(uuid.uuid4()),

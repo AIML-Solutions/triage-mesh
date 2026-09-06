@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 docker compose -f deploy/compose.yaml up -d --build
 trap 'echo; echo "(mesh left running — stop with: docker compose -f deploy/compose.yaml down)"' EXIT
 
-echo "waiting for orchestrator..."
+echo "waiting for the mesh..."
 for _ in $(seq 1 30); do
   curl -sf http://127.0.0.1:8080/docs >/dev/null 2>&1 && break
   sleep 2
@@ -27,18 +27,23 @@ for _ in $(seq 1 60); do
 done
 echo
 
-curl -s "http://127.0.0.1:8080/assessments/$AID" | python3 -c '
-import sys, json
-d = json.load(sys.stdin)
-r = d["report"]
-if r is None:
-    raise SystemExit(f"assessment failed: {d[\"error\"]}")
-print(f"\n{len(r[\"findings\"])} findings (partial={r[\"partial\"]}):")
-for f in r["findings"]:
-    p = f["package"]
-    print(f'"'"'  {p["name"]}=={p["version"]}: {f["advisory_id"]} [{f["severity"]}] -> {f["recommended_action"]}'"'"')
-print(f"\nsummary: {r[\"summary\"]}")
-'
+curl -s "http://127.0.0.1:8080/assessments/$AID" > /tmp/triage-mesh-demo.json
+python3 - <<'PYEOF'
+import json
+
+data = json.load(open("/tmp/triage-mesh-demo.json"))
+report = data["report"]
+if report is None:
+    raise SystemExit("assessment failed: " + str(data["error"]))
+print(f"\n{len(report['findings'])} findings (partial={report['partial']}):")
+for finding in report["findings"]:
+    pkg = finding["package"]
+    print(
+        f"  {pkg['name']}=={pkg['version']}: {finding['advisory_id']} "
+        f"[{finding['severity']}] -> {finding['recommended_action']}"
+    )
+print(f"\nsummary: {report['summary']}")
+PYEOF
 
 echo
 read -r -p "approve and publish this report? [y/N] " answer

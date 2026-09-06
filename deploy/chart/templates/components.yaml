@@ -1,0 +1,95 @@
+{{- range $name, $component := .Values.components }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: {{ $name }}
+          image: {{ $.Values.image }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy }}
+          command: ["python", "-m", {{ $component.module | quote }}]
+          ports:
+            - containerPort: {{ $component.port }}
+          env:
+            - name: PORT
+              value: {{ $component.port | quote }}
+            {{- range $key, $value := $component.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- if $component.model }}
+            - name: MODEL_PROVIDER
+              value: {{ $.Values.modelProvider | quote }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: mesh-auth
+          readinessProbe:
+            tcpSocket:
+              port: {{ $component.port }}
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: {{ $component.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          {{- if or $component.repo $component.dataDir }}
+          volumeMounts:
+            {{- if $component.repo }}
+            - name: seed-repo
+              mountPath: /repo
+              readOnly: true
+            {{- end }}
+            {{- if $component.dataDir }}
+            - name: data
+              mountPath: {{ $component.dataDir }}
+            {{- end }}
+          {{- end }}
+      {{- if or $component.repo $component.dataDir }}
+      volumes:
+        {{- if $component.repo }}
+        - name: seed-repo
+          configMap:
+            name: seed-repo
+        {{- end }}
+        {{- if $component.dataDir }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    app: {{ $name }}
+spec:
+  selector:
+    app: {{ $name }}
+  ports:
+    - port: {{ $component.port }}
+      targetPort: {{ $component.port }}
+{{- end }}

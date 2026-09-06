@@ -5,6 +5,26 @@
 # this file is refused. Phase 3 generates K8s NetworkPolicies from the same
 # topology this file declares.
 
+# Who may open a connection to whom (service -> [service:port]). The compose
+# networks and the generated K8s NetworkPolicies (scripts/gen_networkpolicies.py
+# -> deploy/chart/templates/networkpolicies.yaml) both derive from this block;
+# everything not listed is default-deny. internet_egress marks the single
+# service allowed to reach outside the cluster (OSV queries).
+topology:
+  services:
+    orchestrator: {port: 8080, external_ingress: true}
+    scanner: {port: 7201}
+    intel: {port: 7202}
+    assessor: {port: 7203}
+    mcp-repo-reader: {port: 7101}
+    mcp-vuln-intel: {port: 7102, internet_egress: true}
+    mcp-report-writer: {port: 7103}
+  edges:
+    orchestrator: [scanner, intel, assessor]
+    scanner: [mcp-repo-reader]
+    intel: [mcp-vuln-intel]
+    assessor: [mcp-report-writer]
+
 agents:
   scanner:
     max_calls_per_task: 20

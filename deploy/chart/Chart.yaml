@@ -1,0 +1,6 @@
+apiVersion: v2
+name: triage-mesh
+description: Multi-agent vulnerability triage over MCP + A2A with a deterministic security harness
+type: application
+version: 0.2.0
+appVersion: "0.2.0"

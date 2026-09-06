@@ -42,4 +42,4 @@ Every mitigation above maps to automated checks that run in CI:
 - **Policy unit tests** (`tests/test_policy.py`): deny-by-default, enum/pattern/size constraints, ceilings (T4, T6, T9).
 - **Auth tests** (`tests/test_auth.py`): audience scoping, tamper rejection, middleware enforcement (T5).
 - Live checks performed against the compose stack: tokenless POSTs to MCP and A2A endpoints return 401; the scanner container cannot open a socket to `mcp-vuln-intel` (network topology, T5).
-- Phase 3 adds a cluster conformance test asserting the NetworkPolicy topology matches `deploy/policies.yaml`.
+- **Cluster conformance** (`scripts/cluster-conformance.sh`, kind + Calico): eleven reachability assertions verify the enforced NetworkPolicy topology matches `deploy/policies.yaml` (T5), then the pipeline runs end-to-end through the cluster. `tests/test_topology_sync.py` fails CI if the generated policies drift from the declared topology.

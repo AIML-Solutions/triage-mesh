@@ -1,0 +1,9 @@
+# kind cluster for triage-mesh. Default CNI is disabled because kindnet does
+# not enforce NetworkPolicies — Calico is installed on top (make cluster-up),
+# so the generated policies are actually enforced, not decorative.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: triage-mesh
+networking:
+  disableDefaultCNI: true
+  podSubnet: 10.244.0.0/16

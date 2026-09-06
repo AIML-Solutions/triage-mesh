@@ -1,0 +1,56 @@
+image: triage-mesh:0.2.0
+imagePullPolicy: IfNotPresent
+
+# The deployment-wide service-auth secret; audience scoping happens per token.
+meshSecret: demo-mesh-secret
+modelProvider: mock
+anthropicApiKey: ""
+
+# Ports and reachability live in deploy/policies.yaml (topology); the
+# NetworkPolicies in templates/ are generated from it. Keep the two in sync —
+# CI checks this.
+components:
+  orchestrator:
+    module: triage_mesh.orchestrator.service
+    port: 8080
+    env:
+      SCANNER_URL: http://scanner:7201
+      INTEL_URL: http://intel:7202
+      ASSESSOR_URL: http://assessor:7203
+      PUBLISHED_DIR: /data/published
+    dataDir: /data/published
+  scanner:
+    module: triage_mesh.agents.scanner
+    port: 7201
+    env:
+      MCP_URL: http://mcp-repo-reader:7101/mcp
+      PUBLIC_URL: http://scanner:7201/
+  intel:
+    module: triage_mesh.agents.intel
+    port: 7202
+    env:
+      MCP_URL: http://mcp-vuln-intel:7102/mcp
+      PUBLIC_URL: http://intel:7202/
+  assessor:
+    module: triage_mesh.agents.assessor
+    port: 7203
+    env:
+      MCP_URL: http://mcp-report-writer:7103/mcp
+      PUBLIC_URL: http://assessor:7203/
+    model: true
+  mcp-repo-reader:
+    module: triage_mesh.mcp_servers.repo_reader
+    port: 7101
+    env:
+      REPO_ROOT: /repo
+    repo: true
+  mcp-vuln-intel:
+    module: triage_mesh.mcp_servers.vuln_intel
+    port: 7102
+    env: {}
+  mcp-report-writer:
+    module: triage_mesh.mcp_servers.report_writer
+    port: 7103
+    env:
+      STAGING_DIR: /data/staging
+    dataDir: /data/staging

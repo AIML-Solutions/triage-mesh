@@ -18,6 +18,14 @@ Builds the seven containers, assesses the deliberately vulnerable seed repo, pri
 
 The compose networks encode the zero-trust topology: each agent can reach its own MCP server and nothing else, and only `vuln-intel` has internet egress. Try it: `docker compose -f deploy/compose.yaml exec scanner python -c "import socket; socket.create_connection(('mcp-vuln-intel', 7102), timeout=3)"` — it fails by design.
 
+### Kubernetes
+
+```bash
+make cluster-demo   # kind + Calico, build & load image, helm install, conformance suite
+```
+
+The Helm chart lives in `deploy/chart/`. Its NetworkPolicies are **generated from the same `deploy/policies.yaml` topology the harness policy engine reads** (`make netpol`; CI fails on drift), and the cluster runs Calico so they are enforced, not decorative. `scripts/cluster-conformance.sh` proves it: eleven reachability checks (allowed paths open, forbidden paths blocked) plus the full pipeline through the cluster. Non-root numeric UIDs, resource limits, liveness/readiness probes, secrets via K8s Secrets.
+
 ## What it does
 
 Given a repository, the crew produces a human-gated vulnerability assessment:
@@ -51,8 +59,8 @@ flowchart LR
 | 0 | Architecture, protocol-boundary, and threat-model docs | ✅ |
 | 1 | Happy path end-to-end: orchestrator + 3 agents + 3 MCP servers, one-command demo | ✅ |
 | 2 | Policy engine, trust labels, service JWTs, red-team suite in CI | ✅ |
-| 3 | Helm chart, NetworkPolicies, kind-reproducible cluster deploy | next |
-| 4 | Observability, demo recording, write-up | |
+| 3 | Helm chart, generated NetworkPolicies, kind+Calico conformance suite | ✅ |
+| 4 | Observability, demo recording, write-up | next |
 
 ## Stack
 

@@ -15,6 +15,9 @@ def serve(server: MCPServer, default_port: int) -> None:
     addressed by compose/K8s DNS names; network reachability is constrained
     one layer down (compose networks / NetworkPolicies), and phase 2 adds JWTs.
     """
+    from triage_mesh.harness.telemetry import setup_telemetry, traced_asgi
+
+    setup_telemetry(server.name)
     app = server.streamable_http_app(
         stateless_http=True,
         json_response=True,
@@ -25,7 +28,7 @@ def serve(server: MCPServer, default_port: int) -> None:
     from triage_mesh.harness.auth import ServiceAuthMiddleware
 
     uvicorn.run(
-        ServiceAuthMiddleware(app, audience=server.name),
+        traced_asgi(ServiceAuthMiddleware(app, audience=server.name)),
         host=os.environ.get("HOST", "0.0.0.0"),
         port=int(os.environ.get("PORT", default_port)),
         log_level="info",

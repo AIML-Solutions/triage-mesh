@@ -20,9 +20,10 @@ services:
       ASSESSOR_URL: http://assessor:7203
       PUBLISHED_DIR: /data/published
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
     ports: ["8080:8080"]
     volumes: [published:/data/published]
-    networks: [control, edge]
+    networks: [control, edge, telemetry]
     depends_on: [scanner, intel, assessor]
 
   scanner:
@@ -32,7 +33,8 @@ services:
       MCP_URL: http://mcp-repo-reader:7101/mcp
       PUBLIC_URL: http://scanner:7201/
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
-    networks: [control, tools-scanner]
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    networks: [control, tools-scanner, telemetry]
     depends_on: [mcp-repo-reader]
 
   intel:
@@ -42,7 +44,8 @@ services:
       MCP_URL: http://mcp-vuln-intel:7102/mcp
       PUBLIC_URL: http://intel:7202/
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
-    networks: [control, tools-intel]
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    networks: [control, tools-intel, telemetry]
     depends_on: [mcp-vuln-intel]
 
   assessor:
@@ -52,9 +55,10 @@ services:
       MCP_URL: http://mcp-report-writer:7103/mcp
       PUBLIC_URL: http://assessor:7203/
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
       MODEL_PROVIDER: ${MODEL_PROVIDER:-mock}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-    networks: [control, tools-assessor]
+    networks: [control, tools-assessor, telemetry]
     depends_on: [mcp-report-writer]
 
   mcp-repo-reader:
@@ -63,15 +67,17 @@ services:
     environment:
       REPO_ROOT: /repo
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
     volumes: ["../demo/seed-repo:/repo:ro"]
-    networks: [tools-scanner]
+    networks: [tools-scanner, telemetry]
 
   mcp-vuln-intel:
     <<: *service
     command: python -m triage_mesh.mcp_servers.vuln_intel
     environment:
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
-    networks: [tools-intel, egress]
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+    networks: [tools-intel, egress, telemetry]
 
   mcp-report-writer:
     <<: *service
@@ -79,11 +85,20 @@ services:
     environment:
       STAGING_DIR: /data/staging
       MESH_SECRET: ${MESH_SECRET:-demo-mesh-secret}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
     volumes: [staging:/data/staging]
-    networks: [tools-assessor]
+    networks: [tools-assessor, telemetry]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["16686:16686"]
+    networks: [telemetry, edge]
 
 networks:
   edge: {}
+  telemetry: {internal: true}
   control: {internal: true}
   tools-scanner: {internal: true}
   tools-intel: {internal: true}

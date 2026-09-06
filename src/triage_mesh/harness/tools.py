@@ -12,6 +12,7 @@ from mcp.client.client import Client
 from mcp.client.streamable_http import streamable_http_client
 
 from triage_mesh.harness.policy import PolicyEngine, PolicyViolation
+from triage_mesh.harness.telemetry import get_tracer
 
 
 def _client(mcp_url: str, headers: dict[str, str] | None) -> Client:
@@ -56,14 +57,22 @@ class Toolbelt:
         self._calls = 0
 
     async def call(self, tool: str, arguments: dict[str, Any]) -> Any:
-        self._calls += 1
-        if self._calls > self._policy.max_calls(self._agent):
-            raise PolicyViolation(
-                f"agent {self._agent!r} exceeded "
-                f"{self._policy.max_calls(self._agent)} calls per task"
-            )
-        self._policy.check(self._agent, tool, arguments)
-        from triage_mesh.harness.auth import bearer_headers
+        with get_tracer().start_as_current_span("tool.call") as span:
+            span.set_attribute("agent.name", self._agent)
+            span.set_attribute("tool.name", tool)
+            self._calls += 1
+            try:
+                if self._calls > self._policy.max_calls(self._agent):
+                    raise PolicyViolation(
+                        f"agent {self._agent!r} exceeded "
+                        f"{self._policy.max_calls(self._agent)} calls per task"
+                    )
+                self._policy.check(self._agent, tool, arguments)
+            except PolicyViolation:
+                span.set_attribute("policy.verdict", "denied")
+                raise
+            span.set_attribute("policy.verdict", "allowed")
+            from triage_mesh.harness.auth import bearer_headers
 
-        headers = bearer_headers(self._agent, self._audience) if self._audience else None
-        return await call_tool(self._mcp_url, tool, arguments, headers=headers)
+            headers = bearer_headers(self._agent, self._audience) if self._audience else None
+            return await call_tool(self._mcp_url, tool, arguments, headers=headers)

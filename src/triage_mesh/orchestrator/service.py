@@ -18,6 +18,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from triage_mesh.harness.logging import get_logger, log
+from triage_mesh.harness.telemetry import get_tracer, setup_telemetry
 from triage_mesh.orchestrator import a2a
 from triage_mesh.schemas import AssessmentState, RemediationReport, ReportStatus
 
@@ -50,6 +51,13 @@ async def run_pipeline(assessment: Assessment) -> None:
     send_task = a2a.send_task  # late-bound so tests and middleware can swap it
     config = _config()
     correlation_id = assessment.id
+    with get_tracer().start_as_current_span("assessment") as span:
+        span.set_attribute("assessment.id", assessment.id)
+        span.set_attribute("assessment.repo_ref", assessment.repo_ref)
+        await _run_pipeline_steps(assessment, send_task, config, correlation_id)
+
+
+async def _run_pipeline_steps(assessment, send_task, config, correlation_id) -> None:
     try:
         assessment.state = AssessmentState.SCANNING
         scan = await send_task(
@@ -153,8 +161,11 @@ async def approve(assessment_id: str) -> dict:
 
 
 def main() -> None:
+    from triage_mesh.harness.telemetry import traced_asgi
+
+    setup_telemetry("orchestrator")
     uvicorn.run(
-        app,
+        traced_asgi(app),
         host=os.environ.get("HOST", "0.0.0.0"),
         port=int(os.environ.get("PORT", "8080")),
         log_level="info",

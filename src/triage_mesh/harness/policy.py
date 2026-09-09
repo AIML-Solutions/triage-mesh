@@ -24,6 +24,12 @@ class PolicyViolation(RuntimeError):
 class PolicyEngine:
     def __init__(self, config: dict):
         self._agents: dict = config.get("agents") or {}
+        self._integrity: dict = config.get("tool_integrity") or {}
+
+    def expected_manifest(self, server: str) -> str | None:
+        """Pinned manifest hash for a first-party MCP server (None if unpinned)."""
+        value = self._integrity.get(server)
+        return str(value) if value else None
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> PolicyEngine:

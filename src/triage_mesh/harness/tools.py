@@ -11,8 +11,20 @@ import httpx
 from mcp.client.client import Client
 from mcp.client.streamable_http import streamable_http_client
 
+from triage_mesh.harness.integrity import live_manifest_hash
 from triage_mesh.harness.policy import PolicyEngine, PolicyViolation
 from triage_mesh.harness.telemetry import get_tracer
+
+
+async def verify_manifest(mcp_url: str, headers: dict[str, str] | None, expected: str) -> None:
+    """Refuse to use a tool server whose advertised manifest drifted from its pin (T3)."""
+    async with _client(mcp_url, headers) as client:
+        actual = await live_manifest_hash(client)
+    if actual != expected:
+        raise PolicyViolation(
+            f"tool manifest at {mcp_url} does not match its pin "
+            f"(expected {expected[:12]}…, got {actual[:12]}…) — refusing all calls"
+        )
 
 
 def _client(mcp_url: str, headers: dict[str, str] | None) -> Client:
@@ -55,6 +67,7 @@ class Toolbelt:
         self._policy = policy or PolicyEngine.load()
         self._audience = audience
         self._calls = 0
+        self._manifest_verified = False
 
     async def call(self, tool: str, arguments: dict[str, Any]) -> Any:
         with get_tracer().start_as_current_span("tool.call") as span:
@@ -75,4 +88,10 @@ class Toolbelt:
             from triage_mesh.harness.auth import bearer_headers
 
             headers = bearer_headers(self._agent, self._audience) if self._audience else None
+            expected = self._policy.expected_manifest(self._audience) if self._audience else None
+            if expected and not self._manifest_verified:
+                # Once per task: the server must still advertise exactly the pinned tools.
+                await verify_manifest(self._mcp_url, headers, expected)
+                self._manifest_verified = True
+                span.set_attribute("tool.manifest", "verified")
             return await call_tool(self._mcp_url, tool, arguments, headers=headers)

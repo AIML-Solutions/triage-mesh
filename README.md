@@ -3,7 +3,7 @@
 ![ci](https://github.com/AIML-Solutions/triage-mesh/actions/workflows/ci.yml/badge.svg)
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![python](https://img.shields.io/badge/python-3.12%2B-blue)
-![redteam](https://img.shields.io/badge/red--team-12%2F12_blocked-red)
+![redteam](https://img.shields.io/badge/red--team-13%2F13_blocked-red)
 
 **A multi-agent vulnerability triage system that treats protocols, privilege, and untrusted data as first-class architectural concerns.**
 
@@ -12,7 +12,9 @@ An orchestrator delegates to specialist agents over **A2A**; each agent reaches 
 - Deny-by-default **policy engine** enforced in the harness before any tool call leaves an agent
 - **Trust-labeled** untrusted text; findings derive only from typed fields injections can't reach
 - Audience-scoped **service JWTs** on every internal call; human approval on the only irreversible action
-- A **red-team suite of 12 attack scenarios** that must fail closed in CI ([tests/redteam](tests/redteam/test_attacks.py), each mapped to a threat in [docs/threat-model.md](docs/threat-model.md))
+- **Pinned tool manifests** — each MCP server's tool names, descriptions, and schemas are hashed into the policy file; the harness re-verifies before an agent's first call and refuses a server whose manifest drifted (tool-poisoning / rug-pull defense)
+- A **red-team suite of 13 attack scenarios** that must fail closed in CI ([tests/redteam](tests/redteam/test_attacks.py), each mapped to a threat in [docs/threat-model.md](docs/threat-model.md))
+- The flagship's own trajectory is **regression-gated by [multiclaw-harness](https://github.com/AIML-Solutions/multiclaw-harness)** in CI: expected tool sequence, forbidden actions, budgets, outcome rubric
 - **NetworkPolicies generated** from the same policy file the harness reads, enforced by Calico, proven by a conformance suite
 - **One distributed trace per assessment** across all seven services (OpenTelemetry → Jaeger)
 

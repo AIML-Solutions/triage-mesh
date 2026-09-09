@@ -18,5 +18,23 @@ jobs:
           uv run ruff format --check src tests scripts
       - name: Unit and integration tests
         run: uv run pytest -q --ignore=tests/redteam
-      - name: Red-team suite (12 attack scenarios must fail closed)
+      - name: Red-team suite (13 attack scenarios must fail closed)
         run: uv run pytest tests/redteam -q
+
+  harness:
+    # The flagship's own trajectory, regression-gated by AIML Solutions'
+    # multiclaw-harness: expected tool sequence, forbidden actions, budgets.
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Record the flagship trajectory (mock provider, in-process)
+        run: uv run python scripts/record_trajectory.py --out /tmp/run.jsonl
+      - name: Evaluate with multiclaw-harness
+        run: |
+          uv run --with git+https://github.com/AIML-Solutions/multiclaw-harness \
+            multiclaw-harness --golden tests/harness/golden_cases.jsonl --run /tmp/run.jsonl \
+            --json-out /tmp/scorecard.json --md-out /tmp/scorecard.md --min-pass-rate 1.0 --min-overall 0.90
+          cat /tmp/scorecard.md >> "$GITHUB_STEP_SUMMARY"
